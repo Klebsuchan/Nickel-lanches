@@ -241,35 +241,89 @@ export default function App() {
     setShowReview(true);
   };
 
+  const xisItems = menuItems.filter(i => i.name.toLowerCase().includes('xis') && !i.name.toLowerCase().includes('combo') && !i.name.toLowerCase().includes('trio'));
+  const hotDogItems = menuItems.filter(i => i.name.toLowerCase().includes('cachorro quente') && !i.name.toLowerCase().includes('combo') && !i.name.toLowerCase().includes('trio'));
+  const portionItems = menuItems.filter(i => i.name.toLowerCase().includes('batata frita') && !i.name.toLowerCase().includes('combo') && !i.name.toLowerCase().includes('trio'));
+  const extraItems = menuItems.filter(i => !i.name.toLowerCase().includes('xis') && !i.name.toLowerCase().includes('cachorro quente') && !i.name.toLowerCase().includes('batata frita') && !i.id.startsWith('c') && !i.name.toLowerCase().includes('combo') && !i.name.toLowerCase().includes('trio'));
+
+  const renderProductGrid = (items: Product[], title: string) => {
+    if (items.length === 0) return null;
+    return (
+      <div className="mb-10">
+        <h3 className="text-2xl md:text-3xl font-display uppercase mb-4 border-b-4 border-black border-dashed pb-2 inline-block text-white">{title}</h3>
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 flex-grow">
+          {items.map((item) => (
+            <motion.div
+              key={item.id}
+              whileHover={{ scale: 1.05, zIndex: 10 }}
+              transition={{ duration: 0.3, ease: [0.175, 0.885, 0.32, 1.275] }}
+              className="comic-panel rounded-xl p-3 md:p-4 flex flex-col justify-between overflow-hidden relative cursor-pointer transition-transform hover:-translate-y-2 group"
+              onClick={() => handleProductClick(item)}
+            >
+              <div className="absolute -right-4 -top-4 w-16 h-16 md:w-20 md:h-20 bg-yellow-400 rounded-full blur-xl md:blur-2xl opacity-20 group-hover:opacity-40 transition-opacity" />
+              
+              <div className="h-20 md:h-28 w-full bg-zinc-100 border-2 border-dashed border-zinc-300 rounded-lg mb-2 flex items-center justify-center relative z-10">
+                <button
+                  onClick={(e) => toggleFavorite(item.id, e)}
+                  className="absolute top-1 left-1 md:top-2 md:left-2 z-20 w-6 h-6 md:w-8 md:h-8 bg-white border-2 border-black rounded-full flex items-center justify-center hover:bg-zinc-100 transition-colors shadow-[2px_2px_0px_#000] active:translate-y-0.5 active:shadow-none"
+                >
+                  <Heart size={14} className={favorites.includes(item.id) ? 'fill-red-500 text-red-500' : 'text-zinc-400'} />
+                </button>
+                <span className="text-4xl md:text-6xl drop-shadow-md group-hover:scale-125 transition-transform duration-300">
+                  {item.emoji}
+                </span>
+                <div className="absolute top-1 right-1 md:top-2 md:right-2 flex items-center gap-1 bg-white px-1.5 py-0.5 md:px-2 md:py-1 rounded-full text-[8px] md:text-[10px] font-bold text-zinc-900 border-2 border-black shadow-[1px_1px_0px_#F9E822] md:shadow-[2px_2px_0px_#F9E822]">
+                  <Star size={8} className="text-yellow-500" /> +{item.points}
+                </div>
+              </div>
+              
+              <div className="flex justify-between items-start mb-1 relative z-10 text-black">
+                <h3 className="text-sm md:text-xl font-bold font-display tracking-wide leading-tight">{item.name}</h3>
+              </div>
+              <p className="text-[9px] md:text-[10px] text-zinc-600 font-bold uppercase leading-tight mb-3 min-h-[30px] relative z-10 line-clamp-3 md:line-clamp-none">{item.description}</p>
+              
+              <div className="flex justify-between items-center mt-auto relative z-10">
+                <span className="text-black font-display text-sm md:text-xl tracking-wider">R$ {item.price.toFixed(2)}</span>
+                <button className="w-8 h-8 md:w-10 md:h-10 bg-yellow-400 text-black border-2 border-black rounded-full flex items-center justify-center hover:bg-yellow-300 transition-colors shadow-[2px_2px_0px_#000] hover:shadow-[4px_4px_0px_#000] shrink-0">
+                  <ShoppingCart size={14} className="md:w-[18px] md:h-[18px]" />
+                </button>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   const renderMenu = () => (
     <div className="w-full px-4 md:px-10 py-8 mx-auto max-w-[2560px]">
       {/* Header */}
-      <header className="flex flex-col md:flex-row justify-between items-start md:items-center border-b-4 border-black border-dashed pb-6 mb-8 relative">
-        <div className="flex items-center gap-4 relative z-10 mb-6 md:mb-0">
+      <header className="flex flex-col xl:flex-row justify-between items-center xl:items-center border-b-4 border-black border-dashed pb-6 mb-8 relative gap-6">
+        <div className="flex flex-col md:flex-row items-center gap-4 relative z-10 w-full xl:w-auto text-center md:text-left">
           <motion.div 
             animate={{ rotate: [-3, 3, -3], y: [-2, 2, -2] }}
             transition={{ repeat: Infinity, duration: 5, ease: "easeInOut" }}
             onClick={handleLogoClick}
-            className="w-28 h-28 md:w-40 md:h-40 shrink-0 drop-shadow-[0_0_15px_rgba(244,228,45,0.4)] cursor-pointer"
+            className="w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 shrink-0 drop-shadow-[0_0_15px_rgba(244,228,45,0.4)] cursor-pointer mx-auto md:mx-0"
           >
             <img src="/logonickel.png" alt="Nickel Lanches" className="w-full h-full object-contain" />
           </motion.div>
-          <div className="flex flex-col">
+          <div className="flex flex-col mt-4 md:mt-0">
             <motion.h1 
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-6xl md:text-8xl font-display comic-text-bold leading-none tracking-tight"
+              className="text-5xl sm:text-6xl md:text-6xl lg:text-7xl xl:text-8xl font-display comic-text-bold leading-none tracking-tight"
             >
               NICKEL LANCHES
             </motion.h1>
-            <p className="text-xs md:text-sm tracking-[0.2em] uppercase text-yellow-400 neon-text font-bold mt-2">O lanche mais divertido e animal do planeta! 🐶🚀</p>
+            <p className="text-xs sm:text-xs md:text-sm tracking-[0.2em] uppercase text-yellow-400 neon-text font-bold mt-2">O lanche mais divertido e animal do planeta! 🐶🚀</p>
           </div>
         </div>
         
-        <div className="flex items-center gap-6">
-          <div className="hidden md:flex text-right flex-col">
-            <span className="block text-[10px] uppercase opacity-50">Seus Pontos</span>
-            <span className="text-2xl font-display text-yellow-400 flex items-center justify-end gap-1"><Star size={20} className="text-yellow-400" /> {userPoints} XP</span>
+        <div className="flex flex-wrap items-center justify-center gap-4 mt-2 xl:mt-0 w-full xl:w-auto">
+          <div className="flex text-center md:text-right flex-col bg-zinc-900 md:bg-transparent border-2 border-black md:border-transparent p-2 md:p-0 rounded-xl shadow-[2px_2px_0px_#000] md:shadow-none">
+            <span className="block text-[10px] md:text-[10px] uppercase opacity-50 text-yellow-400 md:text-white">Seus Pontos</span>
+            <span className="text-xl md:text-2xl font-display text-yellow-400 flex items-center justify-center md:justify-end gap-1"><Star size={20} className="text-yellow-400" /> {userPoints} XP</span>
           </div>
           
           <button 
@@ -278,18 +332,6 @@ export default function App() {
             title="Painel do Garçom"
           >
             <ChefHat size={24} />
-          </button>
-          
-          <button 
-            onClick={() => { setIsCartOpen(true); playSound('jump'); }}
-            className="relative p-3 bg-yellow-400 text-black border-2 border-black rounded-xl hover:bg-yellow-300 shadow-[2px_2px_0px_#000] hover:shadow-[4px_4px_0px_#000] transition-all hover:-translate-y-1"
-          >
-            <ShoppingCart size={24} />
-            {cart.length > 0 && (
-              <span className="absolute -top-2 -right-2 bg-red-500 border-2 border-black text-white text-xs font-bold w-6 h-6 flex items-center justify-center rounded-full shadow-[2px_2px_0px_#000]">
-                {cart.reduce((acc, item) => acc + item.quantity, 0)}
-              </span>
-            )}
           </button>
         </div>
       </header>
@@ -311,65 +353,30 @@ export default function App() {
               <motion.div 
                 animate={{ y: [-15, 15, -15], rotate: [-10, 10, -10] }}
                 transition={{ repeat: Infinity, duration: 5 }}
-                className="text-8xl drop-shadow-md"
+                className="text-6xl md:text-8xl drop-shadow-md"
               >
                 🌭
               </motion.div>
               <div className="text-center md:text-left flex-1">
-                <h3 className="text-4xl md:text-5xl font-display text-black comic-text-bold uppercase mb-2 leading-none">HORA DO LANCHE!</h3>
+                <h3 className="text-3xl md:text-4xl lg:text-5xl font-display text-black comic-text-bold uppercase mb-2 leading-none">HORA DO LANCHE!</h3>
                 <p className="text-xs md:text-sm uppercase tracking-widest text-zinc-800 font-bold">Peça agora, jogue com o doguinho e suba no ranking!</p>
               </div>
               <motion.div 
                 animate={{ y: [15, -15, 15], rotate: [10, -10, 10], scale: [1, 1.1, 1] }}
                 transition={{ repeat: Infinity, duration: 4 }}
-                className="text-8xl drop-shadow-[0_0_30px_rgba(255,255,0,0.8)] hidden md:block"
+                className="text-6xl md:text-8xl drop-shadow-[0_0_30px_rgba(255,255,0,0.8)] hidden md:block"
               >
                 🎮
               </motion.div>
             </div>
           </div>
 
-          <h2 className="text-4xl font-display uppercase">O Cardápio Mágico</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 flex-grow">
-            {menuItems.filter(i => !(i.id.startsWith('c') || i.name.toLowerCase().includes('combo') || i.name.toLowerCase().includes('trio'))).map((item) => (
-              <motion.div
-                key={item.id}
-                whileHover={{ scale: 1.1, zIndex: 10 }}
-                transition={{ duration: 0.3, ease: [0.175, 0.885, 0.32, 1.275] }}
-                className="comic-panel rounded-xl p-4 flex flex-col justify-between overflow-hidden relative cursor-pointer transition-transform hover:-translate-y-2 group"
-                onClick={() => handleProductClick(item)}
-              >
-                {/* Glow effect on hover */}
-                <div className="absolute -right-4 -top-4 w-20 h-20 bg-yellow-400 rounded-full blur-2xl opacity-20 group-hover:opacity-40 transition-opacity" />
-                
-                <div className="h-28 w-full bg-zinc-100 border-2 border-dashed border-zinc-300 rounded-lg mb-2 flex items-center justify-center relative z-10">
-                  <button
-                    onClick={(e) => toggleFavorite(item.id, e)}
-                    className="absolute top-2 left-2 z-20 w-8 h-8 bg-white border-2 border-black rounded-full flex items-center justify-center hover:bg-zinc-100 transition-colors shadow-[2px_2px_0px_#000] active:translate-y-0.5 active:shadow-none"
-                  >
-                    <Heart size={16} className={favorites.includes(item.id) ? 'fill-red-500 text-red-500' : 'text-zinc-400'} />
-                  </button>
-                  <span className="text-6xl drop-shadow-md group-hover:scale-125 transition-transform duration-300">
-                    {item.emoji}
-                  </span>
-                  <div className="absolute top-2 right-2 flex items-center gap-1 bg-white px-2 py-1 rounded-full text-[10px] font-bold text-zinc-900 border-2 border-black shadow-[2px_2px_0px_#F9E822]">
-                    <Star size={10} className="text-yellow-500" /> +{item.points}
-                  </div>
-                </div>
-                
-                <div className="flex justify-between items-start mb-1 relative z-10 text-black">
-                  <h3 className="text-xl font-bold font-display tracking-wide">{item.name}</h3>
-                </div>
-                <p className="text-[10px] text-zinc-600 font-bold uppercase leading-tight mb-4 min-h-[30px] relative z-10">{item.description}</p>
-                
-                <div className="flex justify-between items-center mt-auto relative z-10">
-                  <span className="text-black font-display text-xl tracking-wider">R$ {item.price.toFixed(2)}</span>
-                  <button className="w-10 h-10 bg-yellow-400 text-black border-2 border-black rounded-full flex items-center justify-center hover:bg-yellow-300 transition-colors shadow-[2px_2px_0px_#000] hover:shadow-[4px_4px_0px_#000]">
-                    <ShoppingCart size={18} />
-                  </button>
-                </div>
-              </motion.div>
-            ))}
+          <h2 className="text-3xl md:text-5xl font-display uppercase mb-6 drop-shadow-[2px_2px_0px_#fff]">O Cardápio Mágico</h2>
+          <div className="flex flex-col gap-4 flex-grow">
+            {renderProductGrid(xisItems, 'Xis')}
+            {renderProductGrid(hotDogItems, 'Cachorro Quente')}
+            {renderProductGrid(portionItems, 'Porções')}
+            {renderProductGrid(extraItems, 'Bebidas e Extras')}
           </div>
         </div>
 
@@ -392,12 +399,12 @@ export default function App() {
       </div>
 
       {/* Footer */}
-      <footer className="mt-16 pt-8 border-t-4 border-black border-dashed flex flex-col md:flex-row justify-between items-center text-zinc-500 font-bold relative z-10 gap-4">
-        <div className="flex items-center gap-2">
+      <footer className="mt-16 pt-8 border-t-4 border-black border-dashed flex flex-col md:flex-row justify-between items-center text-zinc-500 font-bold relative z-10 gap-4 text-center md:text-left">
+        <div className="flex flex-col md:flex-row items-center gap-2">
           <Dog size={24} className="text-yellow-500" />
-          <span>© 2024 Nickel Lanches. Todos os direitos caninos reservados.</span>
+          <span className="text-sm md:text-base">© 2024 Nickel Lanches. Todos os direitos caninos reservados.</span>
         </div>
-        <div className="flex gap-4 text-sm">
+        <div className="flex flex-wrap justify-center gap-4 text-sm mt-2 md:mt-0">
           <button onClick={() => setActiveModal('privacy')} className="hover:text-black hover:underline underline-offset-4 decoration-yellow-400 decoration-4">Termos de Privacidade</button>
           <button onClick={() => setActiveModal('contact')} className="hover:text-black hover:underline underline-offset-4 decoration-yellow-400 decoration-4">Contato</button>
         </div>
@@ -623,6 +630,22 @@ export default function App() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Cart Button (Floating) */}
+      <button 
+        onClick={() => { setIsCartOpen(true); playSound('jump'); }}
+        className="fixed bottom-4 left-4 md:bottom-8 md:left-8 bg-yellow-400 text-black p-4 rounded-full border-2 border-black shadow-[4px_4px_0px_#000] hover:shadow-[6px_6px_0px_#000] hover:-translate-y-2 transition-all z-[90] flex items-center justify-center group"
+      >
+        <ShoppingCart size={32} />
+        {cart.length > 0 && (
+          <span className="absolute -top-2 -right-2 bg-red-500 border-2 border-black text-white text-xs font-bold w-6 h-6 flex items-center justify-center rounded-full shadow-[2px_2px_0px_#000]">
+            {cart.reduce((acc, item) => acc + item.quantity, 0)}
+          </span>
+        )}
+        <span className="absolute left-full ml-4 bg-white text-black font-bold font-display px-3 py-1 rounded-lg border-2 border-black opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-[2px_2px_0px_#000] pointer-events-none">
+          Sua Sacola
+        </span>
+      </button>
 
       {/* WhatsApp Button */}
       <a 

@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'motion/react';
 import { Printer, CheckSquare, Lock, X, Plus, Trash2, Edit2, Package, Tag, Clock, Save } from 'lucide-react';
-import { Order, getProducts, saveProduct, deleteProduct, getPromos, savePromo, deletePromo, getAllOrders, updateOrderStatus, PromoCode } from '../lib/db';
+import { Order, getProducts, saveProduct, deleteProduct, getPromos, savePromo, deletePromo, getAllOrders, updateOrderStatus, PromoCode, subscribeToAllOrders } from '../lib/db';
 import { Product } from '../types';
 import { useToast } from './Toast';
 import { playSound } from '../lib/audio';
@@ -36,9 +36,10 @@ export default function AdminPanel({ onClose }: AdminPanelProps) {
     }
   };
   
+  const printedOrders = useRef<Set<string>>(new Set(JSON.parse(localStorage.getItem('printed_orders') || '[]')));
+
   const loadData = async () => {
     try {
-      setOrders(await getAllOrders());
       setProducts(await getProducts());
       setPromos(await getPromos());
     } catch (e) {
@@ -49,10 +50,29 @@ export default function AdminPanel({ onClose }: AdminPanelProps) {
 
   useEffect(() => {
     if (isAuthenticated) {
-      const interval = setInterval(() => {
-        loadData();
-      }, 10000); // Polling every 10s for new orders
-      return () => clearInterval(interval);
+      loadData();
+      
+      const unsubOrders = subscribeToAllOrders((newOrders) => {
+        setOrders(newOrders);
+        
+        // Auto print logic
+        const pendingOrders = newOrders.filter(o => o.status === 'preparando');
+        if (pendingOrders.length > 0) {
+          const toPrint = pendingOrders.filter(o => !printedOrders.current.has(o.id));
+          
+          if (toPrint.length > 0) {
+            // Print the newest unprinted order
+            const orderToPrint = toPrint[0];
+            handlePrint(orderToPrint);
+            
+            // Mark as printed
+            printedOrders.current.add(orderToPrint.id);
+            localStorage.setItem('printed_orders', JSON.stringify(Array.from(printedOrders.current)));
+          }
+        }
+      });
+      
+      return () => unsubOrders();
     }
   }, [isAuthenticated]);
   

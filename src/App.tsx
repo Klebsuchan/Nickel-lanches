@@ -9,7 +9,7 @@ import { ShoppingCart, Star, ChefHat, LogOut, ArrowRight, Dog, Tag, Heart } from
 import { MENU_ITEMS, DISCOUNT_CODES } from './data';
 import { CartItem, Product, OrderInfo } from './types';
 import DogGame from './components/DogGame';
-import WaiterPanel from './components/WaiterPanel';
+import AdminPanel from './components/AdminPanel';
 import Sidebar from './components/Sidebar';
 import FloatingBackground from './components/FloatingBackground';
 import FeedbacksSection from './components/FeedbacksSection';
@@ -19,11 +19,12 @@ import GallerySection from './components/GallerySection';
 import LoyaltyLevels from './components/LoyaltyLevels';
 import FAQSection from './components/FAQSection';
 import LocationSection from './components/LocationSection';
+import HeroVideo from './components/HeroVideo';
 import ProductModal from './components/ProductModal';
 import { useToast } from './components/Toast';
 import { auth } from './lib/firebase';
 import { User as FirebaseUser } from 'firebase/auth';
-import { createUserProfile, getUserProfile, addXpToUser, saveOrder, UserProfile, Order } from './lib/db';
+import { subscribeToProducts, subscribeToPromos, seedDatabase, createUserProfile, getUserProfile, addXpToUser, saveOrder, UserProfile, Order } from './lib/db';
 import { playSound } from './lib/audio';
 
 export default function App() {
@@ -38,6 +39,22 @@ export default function App() {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [activeModal, setActiveModal] = useState<'privacy' | 'contact' | null>(null);
   const [showCookies, setShowCookies] = useState(false);
+  const [menuItems, setMenuItems] = useState<Product[]>([]);
+  const [discountCodes, setDiscountCodes] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    seedDatabase(MENU_ITEMS, DISCOUNT_CODES);
+    const unsubProducts = subscribeToProducts(setMenuItems);
+    const unsubPromos = subscribeToPromos((promos) => {
+      const codeMap = promos.reduce((acc, curr) => ({ ...acc, [curr.code]: curr.discount }), {});
+      setDiscountCodes(codeMap);
+    });
+    return () => {
+      unsubProducts();
+      unsubPromos();
+    };
+  }, []);
+
   
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [discountCode, setDiscountCode] = useState('');
@@ -140,8 +157,8 @@ export default function App() {
 
   const applyDiscount = () => {
     const code = discountCode.toUpperCase();
-    if (DISCOUNT_CODES[code]) {
-      setAppliedDiscount(DISCOUNT_CODES[code]);
+    if (discountCodes[code]) {
+      setAppliedDiscount(discountCodes[code]);
       playSound('laser');
       addToast({ message: 'Cupom aplicado com sucesso!', type: 'success', title: 'Desconto' });
     } else {
@@ -185,7 +202,9 @@ export default function App() {
       await saveOrder(user.uid, {
         items: newOrder.items,
         totalPrice: newOrder.total,
-        totalPoints: newOrder.pointsEarned
+        totalPoints: newOrder.pointsEarned,
+        status: newOrder.status,
+        userName: user.displayName || 'Anônimo'
       });
     }
 
@@ -223,7 +242,7 @@ export default function App() {
   };
 
   const renderMenu = () => (
-    <div className="max-w-7xl mx-auto px-4 py-8">
+    <div className="w-full px-4 md:px-10 py-8 mx-auto max-w-[2560px]">
       {/* Header */}
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center border-b-4 border-black border-dashed pb-6 mb-8 relative">
         <div className="flex items-center gap-4 relative z-10 mb-6 md:mb-0">
@@ -231,7 +250,7 @@ export default function App() {
             animate={{ rotate: [-3, 3, -3], y: [-2, 2, -2] }}
             transition={{ repeat: Infinity, duration: 5, ease: "easeInOut" }}
             onClick={handleLogoClick}
-            className="w-28 h-28 md:w-40 md:h-40 shrink-0 drop-shadow-[0_0_15px_rgba(249,232,34,0.4)] cursor-pointer"
+            className="w-28 h-28 md:w-40 md:h-40 shrink-0 drop-shadow-[0_0_15px_rgba(244,228,45,0.4)] cursor-pointer"
           >
             <img src="/logonickel.png" alt="Nickel Lanches" className="w-full h-full object-contain" />
           </motion.div>
@@ -275,11 +294,15 @@ export default function App() {
         </div>
       </header>
 
+      <HeroVideo />
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 relative z-10">
         {/* Products Grid */}
         <div className="lg:col-span-2 flex flex-col space-y-4">
           
-          <PromoSection />
+          <PromoSection 
+            combos={menuItems.filter(i => i.id.startsWith('c') || i.name.toLowerCase().includes('combo') || i.name.toLowerCase().includes('trio'))} 
+            onComboClick={setSelectedProduct} 
+          />
 
           {/* Fun Banner */}
           <div className="relative comic-panel-alt rounded-2xl p-6 md:p-8 mb-4 overflow-hidden">
@@ -308,7 +331,7 @@ export default function App() {
 
           <h2 className="text-4xl font-display uppercase">O Cardápio Mágico</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 flex-grow">
-            {MENU_ITEMS.map((item) => (
+            {menuItems.filter(i => !(i.id.startsWith('c') || i.name.toLowerCase().includes('combo') || i.name.toLowerCase().includes('trio'))).map((item) => (
               <motion.div
                 key={item.id}
                 whileHover={{ scale: 1.1, zIndex: 10 }}
@@ -619,7 +642,7 @@ export default function App() {
       <div className="relative z-10">
         {view === 'menu' && renderMenu()}
         {view === 'game' && <DogGame order={activeOrder} onFinishOrder={handleFinishOrder} />}
-        {view === 'admin' && <WaiterPanel orders={orderHistory} onClose={() => setView('menu')} />}
+        {view === 'admin' && <AdminPanel onClose={() => setView('menu')} />}
       </div>
       
       <AnimatePresence>
